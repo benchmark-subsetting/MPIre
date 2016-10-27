@@ -1,6 +1,6 @@
 # MPIre v0.0.1
 
-[![Build Status](https://travis-ci.org/benchmark-subsetting/mpire.svg?branch=master)](https://travis-ci.org/benchmark-subsetting/mpire)
+[![Build Status](https://travis-ci.org/benchmark-subsetting/mpire.svg?branch=master)](https://travis-ci.org/benchmark-subsetting/MPIre)
 
 [MPI Replayer
 (MPIre)](https://benchmark-subsetting.github.io/MPIre/) is an open source library
@@ -11,7 +11,7 @@ communication at replay run.
 ### Installation
 
 Please follow the instructions in
-[INSTALL.md](https://github.com/benchmark-subsetting/mpire/blob/master/INSTALL.md).
+[INSTALL.md](https://github.com/benchmark-subsetting/MPIre/blob/master/INSTALL.md).
 
 ### Supported platforms
 
@@ -25,7 +25,7 @@ replay please report them using the issue tracker. Thanks !
 ### Documentation
 
 New users should start by reading [MPIre
-tutorial](https://github.com/benchmark-subsetting/mpire/blob/master/doc/mpire-tutorial.1.md).
+tutorial](https://github.com/benchmark-subsetting/MPÏre/blob/master/doc/mpire-tutorial.1.md).
 
 Once installation is complete, a set of man pages for MPIre is available
 in the `doc/` directory. To check it use
@@ -56,7 +56,7 @@ list](https://groups.google.com/forum/#!forum/cere-dev).
 ### Contributors
 
 MPIre contributors are listed in the [THANKS
-file](https://github.com/benchmark-subsetting/mpire/blob/master/THANKS).
+file](https://github.com/benchmark-subsetting/MPIre/blob/master/THANKS).
 
 ### License and copyright
 

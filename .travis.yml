@@ -1,0 +1,37 @@
+language: c
+sudo: required
+dist: trusty
+
+before_install:
+
+  - sudo apt-get -y install autoconf automake build-essential libtool
+    libibnetdisc-dev gfortran
+
+  #Install MPI
+  - wget https://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2.tar.gz
+  - tar -xf openmpi-1.10.2.tar.gz
+  - cd openmpi-1.10.2
+  - ./configure CC=gcc CXX=g++ FC=gfortran > conf
+  - make -j4 > make
+  - sudo make install > install
+  - cd ..
+
+  # Install ronn
+  - gem install ronn > ronn_install
+
+install:
+  - export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+  - mpirun --version
+  - ./autogen.sh
+  - ./configure
+  - make
+  - sudo make install
+
+before_script:
+  - cat config.log
+
+script:
+  - cd tests/
+  - ./test.sh
+  - cd ..
+  - for i in $(find tests/ -maxdepth 1 -type d -name 'test_*' | sort ); do echo "************** TEST $i"; cat $i/test.log; done;
