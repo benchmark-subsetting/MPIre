@@ -2,11 +2,10 @@
 
 [![Build Status](https://travis-ci.org/benchmark-subsetting/MPIre.svg?branch=master)](https://travis-ci.org/benchmark-subsetting/MPIre)
 
-[MPI Replayer
-(MPIre)](https://benchmark-subsetting.github.io/MPIre/) is an open source library
-that allows the user to replay any MPI rank from MPI applications. It first saves
-communication for the desired rank at capture run. Then it uses log file to simulate
-communication at replay run.
+MPI Replayer (MPIre) is an open source library that allows the user to replay
+any MPI rank from MPI applications. It first saves communication for the desired
+rank at capture run. Then it uses log file to simulate communication at replay
+run.
 
 ### Installation
 
