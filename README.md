@@ -1,6 +1,6 @@
 # MPIre v0.0.1
 
-[![Build Status](https://travis-ci.org/benchmark-subsetting/mpire.svg?branch=master)](https://travis-ci.org/benchmark-subsetting/MPIre)
+[![Build Status](https://travis-ci.org/benchmark-subsetting/MPIre.svg?branch=master)](https://travis-ci.org/benchmark-subsetting/MPIre)
 
 [MPI Replayer
 (MPIre)](https://benchmark-subsetting.github.io/MPIre/) is an open source library
@@ -25,7 +25,7 @@ replay please report them using the issue tracker. Thanks !
 ### Documentation
 
 New users should start by reading [MPIre
-tutorial](https://github.com/benchmark-subsetting/MPÏre/blob/master/doc/mpire-tutorial.1.md).
+tutorial](https://github.com/benchmark-subsetting/MPIre/blob/master/doc/mpire-tutorial.1.md).
 
 Once installation is complete, a set of man pages for MPIre is available
 in the `doc/` directory. To check it use
