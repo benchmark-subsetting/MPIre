@@ -60,7 +60,7 @@ file](https://github.com/benchmark-subsetting/MPIre/blob/master/THANKS).
 
 ### License and copyright
 
-Copyright (c) 2013-2016, Universite de Versailles St-Quentin-en-Yvelines
+Copyright (c) 2016, Universite de Versailles St-Quentin-en-Yvelines
 
 MPIre is free software: you can redistribute it and/or modify it under the terms of
 the GNU Lesser General Public License as published by the Free Software
