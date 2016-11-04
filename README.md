@@ -2,10 +2,12 @@
 
 [![Build Status](https://travis-ci.org/benchmark-subsetting/MPIre.svg?branch=master)](https://travis-ci.org/benchmark-subsetting/MPIre)
 
-MPI Replayer (MPIre) is an open source library that allows the user to replay
-any MPI rank from MPI applications. It first saves communication for the desired
-rank at capture run. Then it uses log file to simulate communication at replay
-run.
+MPIre stands for MPI replayer. MPIre is an open source library that allows the user to capture and replay a single rank 
+inside a whole MPI application. MPIre allows to simulate the communications of the other ranks without running them. 
+It is useful to debug performance or crashes in a single node without having to launch all the original MPI processes. 
+During the capture phase, MPIre intercepts and saves all the inbound communication for the desired rank to a set of capture 
+log files. Then, at replay, MPIre replaces the standard MPI calls with reads to the logs to simulate the communications 
+received from the other ranks.
 
 ### Installation
 
@@ -14,12 +16,11 @@ Please follow the instructions in
 
 ### Supported platforms
 
-For now MPIre only supports the Linux operating system. Mpire has been tested
-mainly on x86_64 Debian and Ubuntu distributions with OpenMPI 1.10.2 which
-implements MPI 3.0.
+Current MPIre version only supports the Linux operating system. MPIre has been tested
+on x86_64 Debian and Ubuntu distributions with OpenMPI 1.10.2 which implements MPI 3.0.
 
-MPIre is an alpha release, if you experience bugs during capture and
-replay please report them using the issue tracker. Thanks !
+MPIre is an alpha release, if you experience bugs during capture and replay please report 
+them using the issue tracker. Thanks !
 
 ### Documentation
 
@@ -36,12 +37,12 @@ man -M doc/ mpire-tutorial
 ### Limitations
 
 Communication logs are saved in the chronological order and replayed in the same
-order. MPIre then make the assumption that the execution is deterministic, and
-won't work for non deterministic code like program based on random number or
-code where the order of communication can change.
+order. MPIre makes the assumption that the execution is deterministic, and
+won't work for non deterministic code such as programs where the order of communication 
+can change from one execution to the next (eg. programs performing dynamic scheduling or work-balance).
 
-Also some MPI communication functions are not yet wrapped into MPIre. It means
-that MPIre will fail and exit if it encounter such functions.
+Some MPI communication functions are not yet wrapped into MPIre. MPIre will fail 
+and exit with an appropriate error message if it reaches non-supported functions.
 
 ### Bugs, Feedback and Contributions
 
@@ -59,7 +60,7 @@ file](https://github.com/benchmark-subsetting/MPIre/blob/master/THANKS).
 
 ### License and copyright
 
-Copyright (c) 2013-2016, Universite de Versailles St-Quentin-en-Yvelines
+Copyright (c) 2016, Universite de Versailles St-Quentin-en-Yvelines
 
 MPIre is free software: you can redistribute it and/or modify it under the terms of
 the GNU Lesser General Public License as published by the Free Software
