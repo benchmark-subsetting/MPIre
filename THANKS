@@ -5,4 +5,5 @@ https://github.com/benchmark-subsetting/MPIre/graphs/contributors
 
      Chadi Akel <chadi.akel@uvsq.fr>
      Pablo de Oliveira Castro <pablo.oliveira@uvsq.fr>
-     Rayhana Ziara
+     Rayhana Ziara for the initial prototype of MPIre
+     Jean-Baptiste Besnard for kindly providing an MPI wrapper generator
