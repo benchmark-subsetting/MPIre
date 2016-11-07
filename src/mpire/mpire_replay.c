@@ -34,7 +34,7 @@ void read_in_file(void *buf, int count, MPI_Datatype datatype)
     fprintf(stderr, "Set correct log path with \"export MPIRE_INPUT_PATH=<log_path>\"");
     exit(EXIT_FAILURE);
   }
-
+  fprintf(stderr, "Opened log file %s\n", filename);
   //Load buffer from file into buf
   int my_read_error = MPI_File_read(file, buf, count, datatype, MPI_STATUS_IGNORE);
 
@@ -72,19 +72,44 @@ void init_MPIre() {
 }
 
 int MPI_Init( int * argc, char *** argv ) {
-  init_MPIre();
-  return PMPI_Init( argc, argv );
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
+  int init;
+  MPI_Initialized(&init);
+  if(init) {
+    cpt_read = 0;
+    return MPI_SUCCESS;
+  }
+  else {
+    init_MPIre();
+    return PMPI_Init( argc, argv );
+  }
 }
 
 void mpi_init_( int * ierror ) {
-  init_MPIre();
-  *ierror = PMPI_Init(0, NULL);
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
+  int init;
+  MPI_Initialized(&init);
+  if(init) {
+    cpt_read = 0;
+    *ierror = MPI_SUCCESS;
+  }
+  else {
+    init_MPIre();
+    *ierror = PMPI_Init(0, NULL);
+  }
 }
 
-int MPI_Initialized( int * flag ) {*flag=1; return MPI_SUCCESS;}
-void mpi_initialized_( int * flag, int * ierror ) {*flag=1; *ierror = MPI_SUCCESS;}
+//~int MPI_Initialized( int * flag ) {*flag=1; return MPI_SUCCESS;}
+//~void mpi_initialized_( int * flag, int * ierror ) {*flag=1; *ierror = MPI_SUCCESS;}
 
 int MPI_Finalize( ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   int ret = PMPI_Finalize();
   htable_clear(&requestHtab);
   return ret;
@@ -99,6 +124,9 @@ void mpi_finalized_( int * flag, int * ierror ) {*flag=1;*ierror = MPI_SUCCESS;}
 
 int MPI_Irecv( void * buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request * request )
 {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   add_request(buf, count, datatype, request);
 
   return MPI_SUCCESS;
@@ -106,6 +134,9 @@ int MPI_Irecv( void * buf, int count, MPI_Datatype datatype, int source, int tag
 
 void mpi_irecv_(MPI_Fint * buf, MPI_Fint * count, MPI_Fint * datatype, MPI_Fint * source, MPI_Fint * tag, MPI_Fint * comm, MPI_Fint * request, MPI_Fint * ierror)
 {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   MPI_Comm c_comm = MPI_Comm_f2c(*comm);
   MPI_Datatype c_datatype = MPI_Type_f2c(*datatype);
 
@@ -116,6 +147,9 @@ void mpi_irecv_(MPI_Fint * buf, MPI_Fint * count, MPI_Fint * datatype, MPI_Fint 
 
 int MPI_Recv( void * buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status * status )
 {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   read_in_file(buf, count, datatype);
 
   return MPI_SUCCESS;
@@ -165,6 +199,9 @@ void mpi_abort_( MPI_Comm comm, int errorcode, int * ierror ) {*ierror = MPI_SUC
 //~int MPI_Ialltoall( const void * sendbuf, int sendcount, MPI_Datatype sendtype, void * recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm, MPI_Request * request ) {return MPI_SUCCESS;}
 
 int MPI_Allreduce( const void * sendbuf, void * recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   read_in_file(recvbuf, count, datatype);
 
   return MPI_SUCCESS;
@@ -179,6 +216,9 @@ void mpi_allreduce_( MPI_Fint * sendbuf, MPI_Fint * recvbuf, MPI_Fint *count, MP
 }
 
 int MPI_Alltoall( const void * sendbuf, int sendcount, MPI_Datatype sendtype, void * recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   int size;
   MPI_Comm_size(comm, &size);
 
@@ -195,6 +235,9 @@ void mpi_alltoall_( MPI_Fint *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype, 
 }
 
 int MPI_Alltoallv( const void * sendbuf, const int sendcounts[], const int sdispls[], MPI_Datatype sendtype, void * recvbuf, const int recvcounts[], const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   int size, i;
   int total_recvcounts=0;
 
@@ -232,6 +275,9 @@ void mpi_barrier_( MPI_Fint *comm, MPI_Fint *ierror ) {*ierror = MPI_SUCCESS;}
 //~ void mpi_ibarrier_( MPI_Comm comm, MPI_Request * request, int * ierror ) {*ierror = MPI_SUCCESS;}
 
 int MPI_Bcast(void * buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   if(MPIre_rank != root) {
     read_in_file(buffer, count, datatype);
   }
@@ -245,6 +291,9 @@ void mpi_bcast_( MPI_Fint *buffer, MPI_Fint *count, MPI_Fint *datatype, MPI_Fint
 }
 
 int MPI_Waitall( int count, MPI_Request array_of_requests[], MPI_Status * array_of_statuses ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   int i;
 
   request_t * newHtab = NULL;
@@ -265,6 +314,9 @@ int MPI_Waitall( int count, MPI_Request array_of_requests[], MPI_Status * array_
 }
 
 void mpi_waitall_( MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array_of_statuses, MPI_Fint *ierror ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   int i;
 
   request_t * newHtab = NULL;
@@ -285,6 +337,9 @@ void mpi_waitall_( MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array
 }
 
 int MPI_Wait( MPI_Request * request, MPI_Status * status ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   request_t * newHtab = NULL;
 
   //If newHtab == NULL it means that this request was for an isend and
@@ -300,6 +355,9 @@ int MPI_Wait( MPI_Request * request, MPI_Status * status ) {
 }
 
 void mpi_wait_( MPI_Fint * request, MPI_Fint * status, int * ierror ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   request_t * newHtab = NULL;
 
   //If newHtab == NULL it means that this request was for an isend and
@@ -458,10 +516,16 @@ void mpi_comm_rank_( MPI_Comm comm, int * rank, int * ierror ) {*rank = MPIre_ra
 //~void mpi_comm_set_name_( MPI_Comm comm, const char * comm_name, int * ierror ) {*ierror = MPI_SUCCESS;}
 
 int MPI_Comm_size( MPI_Comm comm, int * size ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   *size=MPIre_size;
   return MPI_SUCCESS;
 }
 void mpi_comm_size_( MPI_Comm comm, int * size, int * ierror ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   *size=MPIre_size;
   *ierror = MPI_SUCCESS;
 }
@@ -919,6 +983,9 @@ void mpi_isend_( const void * buf, int count, MPI_Datatype datatype, int dest, i
 //~void mpi_raccumulate_( void * origin_addr, int origin_count, MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win, MPI_Request * request, int * ierror ) {*ierror = MPI_SUCCESS;}
 
 int MPI_Reduce( const void * sendbuf, void * recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm ) {
+  #ifdef DEBUG
+    print_calling_function();
+  #endif
   if(MPIre_rank == root)
     read_in_file(recvbuf, count, datatype);
 
