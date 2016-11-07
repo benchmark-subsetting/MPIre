@@ -9,9 +9,15 @@
 
 
 #ifdef DEBUG
-int debug = 1;
-#else
-int debug = 0;
+void print_calling_function() {
+}
+
+void print_calling_function_special( const char * caller_name )
+{
+  fprintf(stderr, "In <%s>\n", caller_name);
+}
+
+#define print_calling_function(void) print_calling_function_special(__func__)
 #endif
 
 
@@ -65,9 +71,9 @@ void add_request(void * newBuffer, int newSize, MPI_Datatype newDatatype, void *
   newEntry->bufsize  = newSize;
 
   htable_add(&requestHtab, hash_key, newEntry);
-  if (debug) {
+  #ifdef DEBUG
     fprintf(stderr, "Request %p successfully added\n", newRequest);
-  }
+  #endif
 }
 
 request_t* get_request(void* request) {

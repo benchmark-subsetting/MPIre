@@ -32,6 +32,9 @@ int mkpath(char* file_path, mode_t mode) {
 /** Dump buffer "buf" **/
 void write_in_file(void *buf, int count, MPI_Datatype datatype)
 {
+  //If dump is not active don't log the buffer
+  if(!atoi(getenv("MPIRE_ACTIVE_DUMP"))) return;
+
   MPI_File file;
   char filename[1024];
   int fp;
@@ -45,7 +48,9 @@ void write_in_file(void *buf, int count, MPI_Datatype datatype)
     fprintf(stderr, "Failed to open log file: %s\n", filename);
     exit(EXIT_FAILURE);
   }
-
+  #ifdef DEBUG
+    fprintf(stderr, "Write in %s\n", filename);
+  #endif
   //Dump buffer to log file
   MPI_File_write(file, buf, count, datatype, MPI_STATUS_IGNORE);
 
@@ -70,6 +75,7 @@ void init_MPIre() {
     if(!mpire_active_dump) {
       //If active dump is not defined set it to true
       setenv("MPIRE_ACTIVE_DUMP", "1", 1);
+      MPIre_active_dump = 1;
     }
     else MPIre_active_dump = atoi(mpire_active_dump);
     char* mpire_output_path = getenv("MPIRE_OUTPUT_PATH");
@@ -79,9 +85,13 @@ void init_MPIre() {
     else snprintf(MPIre_output_path, sizeof(MPIre_output_path), "%s", mpire_output_path);
     htable_init(&requestHtab, rehash, NULL);
 
+    fprintf(stderr, "DUMP STATUS = %d\n", MPIre_active_dump);
+    fprintf(stderr, "DUMP PATH = %s\n", MPIre_output_path);
+
     //create directoty path
     if(stat(MPIre_output_path, &info) == -1)
       mkpath(MPIre_output_path, 0777);
+    else fprintf(stderr, "Path already exists\n");
 
     //Save how much processes are run during capture for later replay
     snprintf(filename, sizeof(filename), "%s/nprocs", MPIre_output_path);
@@ -131,8 +141,12 @@ int MPI_Irecv( void * buf, int count, MPI_Datatype datatype, int source, int tag
 {
   int rank, ret;
   MPI_Comm_rank(comm, &rank);
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP")))
+  if(rank == MPIre_rank)
   {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     add_request(buf, count, datatype, request);
   }
   ret = PMPI_Irecv( buf, count, datatype, source, tag, comm, request );
@@ -147,8 +161,12 @@ void mpi_irecv_(MPI_Fint * buf, MPI_Fint * count, MPI_Fint * datatype, MPI_Fint 
   MPI_Request c_request = MPI_Request_f2c(*request);
 
   MPI_Comm_rank(c_comm, &rank);
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP")))
+  if(rank == MPIre_rank)
   {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     add_request(buf, *count, c_datatype, request);
   }
 
@@ -163,7 +181,11 @@ int MPI_Recv( void * buf, int count, MPI_Datatype datatype, int source, int tag,
 
   ret = PMPI_Recv( buf, count, datatype, source, tag, comm, status );
 
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP"))) {
+  if(rank == MPIre_rank) {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     write_in_file(buf, count, datatype);
   }
   return ret;
@@ -186,8 +208,12 @@ int MPI_Wait( MPI_Request * request, MPI_Status * status )
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   ret = PMPI_Wait(request, status);
 
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP"))) 
+  if(rank == MPIre_rank)
   {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     request_t * newHtab = get_request(request);
 
     if(newHtab != NULL) {
@@ -209,8 +235,12 @@ void mpi_wait_( MPI_Fint * request, MPI_Fint * status, int * ierror )
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   *ierror = PMPI_Wait(&c_request, &c_status);
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP"))) 
+  if(rank == MPIre_rank)
   {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     request_t * newHtab = get_request(request);
 
     if(newHtab != NULL) {
@@ -229,8 +259,12 @@ int MPI_Waitall( int count, MPI_Request *array_of_requests, MPI_Status * array_o
 
   ret = PMPI_Waitall(count, array_of_requests, array_of_statuses);
 
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP")))
+  if(rank == MPIre_rank)
   {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     request_t * newHtab = NULL;
     size_t hash_key[count];
 
@@ -261,8 +295,12 @@ void mpi_waitall_( MPI_Fint * count, MPI_Fint * array_of_requests, MPI_Fint * ar
 
   *ierror = PMPI_Waitall(*count, c_request, c_status);
 
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP")))
+  if(rank == MPIre_rank)
   {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     request_t * newHtab = NULL;
     size_t hash_key[*count];
 
@@ -292,7 +330,11 @@ int MPI_Bcast( void * buffer, int count, MPI_Datatype datatype, int root, MPI_Co
 
   ret = PMPI_Bcast( buffer, count, datatype, root, comm );
 
-  if(rank == MPIre_rank && rank != root && atoi(getenv("MPIRE_ACTIVE_DUMP"))) {
+  if(rank == MPIre_rank && rank != root) {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     write_in_file(buffer, count, datatype);
   }
 
@@ -314,8 +356,13 @@ int MPI_Alltoall( const void * sendbuf, int sendcount, MPI_Datatype sendtype, vo
   MPI_Comm_rank(comm, &rank);
 
   ret = PMPI_Alltoall( sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP")))
+  if(rank == MPIre_rank) {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     write_in_file(recvbuf, recvcount*size, recvtype);
+  }
   return ret;
 }
 
@@ -334,7 +381,11 @@ int MPI_Alltoallv( const void * sendbuf, const int sendcounts[], const int sdisp
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
   ret = PMPI_Alltoallv( sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm);
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP"))) {
+  if(rank == MPIre_rank) {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     //Count total elements to be received
     for (i = 0; i < size; i++)
       total_recvcounts += recvcounts[i];
@@ -354,7 +405,11 @@ int MPI_Allreduce( const void * sendbuf, void * recvbuf, int count, MPI_Datatype
   int rank, ret;
   MPI_Comm_rank(comm, &rank);
   ret = PMPI_Allreduce( sendbuf, recvbuf, count, datatype, op, comm );
-  if(rank == MPIre_rank && atoi(getenv("MPIRE_ACTIVE_DUMP"))) {
+  if(rank == MPIre_rank) {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     write_in_file(recvbuf, count, datatype);
   }
   return ret;
@@ -372,7 +427,11 @@ int MPI_Reduce( const void * sendbuf, void * recvbuf, int count, MPI_Datatype da
   int rank, ret;
   MPI_Comm_rank(comm, &rank);
   ret = PMPI_Reduce( sendbuf, recvbuf, count, datatype, op, root, comm );
-  if(rank == MPIre_rank && rank == root && atoi(getenv("MPIRE_ACTIVE_DUMP"))) {
+  if(rank == MPIre_rank && rank == root) {
+    #ifdef DEBUG
+      print_calling_function();
+      fprintf(stderr, "DUMP STATUS = %s\n", getenv("MPIRE_ACTIVE_DUMP"));
+    #endif
     write_in_file(recvbuf, count, datatype);
   }
   return ret;
