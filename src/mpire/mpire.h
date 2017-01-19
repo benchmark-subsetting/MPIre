@@ -7,14 +7,18 @@
 #include <string.h>
 #include <stdio.h>
 
+//#define DEBUG
 
 #ifdef DEBUG
+FILE *comm_fd = NULL;
+
 void print_calling_function() {
 }
 
 void print_calling_function_special( const char * caller_name )
 {
-  fprintf(stderr, "In <%s>\n", caller_name);
+  fprintf(comm_fd, "%s %s\n", caller_name, getenv("MPIRE_ACTIVE_DUMP"));
+  fprintf(stderr, "In %s (Dump status = %s)\n", caller_name, getenv("MPIRE_ACTIVE_DUMP"));
 }
 
 #define print_calling_function(void) print_calling_function_special(__func__)
