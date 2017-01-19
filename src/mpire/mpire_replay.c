@@ -13,7 +13,7 @@
  * cpt_read is an integer incremented after a file was read
  */
 int cpt_read = 0;
-char MPIre_input_path[128]; //Where to save communication log
+char MPIre_input_path[1024]; //Where to save communication log
 int MPIre_size;
 
 /** Load buffer "buf" **/
@@ -21,7 +21,7 @@ void read_in_file(void *buf, int count, MPI_Datatype datatype)
 {
   MPI_File file;
   int fp, i;
-  char filename[254];
+  char filename[1024];
 
   //Log file path
   snprintf(filename, sizeof(filename), "%s/%d", MPIre_input_path, cpt_read++);
@@ -34,7 +34,9 @@ void read_in_file(void *buf, int count, MPI_Datatype datatype)
     fprintf(stderr, "Set correct log path with \"export MPIRE_INPUT_PATH=<log_path>\"");
     exit(EXIT_FAILURE);
   }
-  fprintf(stderr, "Opened log file %s\n", filename);
+  #ifdef DEBUG
+    fprintf(stderr, "Opened log file %s\n", filename);
+  #endif
   //Load buffer from file into buf
   int my_read_error = MPI_File_read(file, buf, count, datatype, MPI_STATUS_IGNORE);
 
@@ -44,7 +46,7 @@ void read_in_file(void *buf, int count, MPI_Datatype datatype)
 void init_MPIre() {
   int rank;
   FILE* fp;
-  char filename[128];
+  char filename[1024];
 
   char* mpire_rank = getenv("MPIRE_RANK");
   if(!mpire_rank) {
@@ -69,12 +71,15 @@ void init_MPIre() {
   }
   int res = fscanf(fp, "%d", &MPIre_size);
   fclose(fp);
+  #ifdef DEBUG
+    setenv("MPIRE_ACTIVE_DUMP", "1", 1);
+    char comm_file[1024];
+    snprintf(comm_file, sizeof(comm_file), "%s/replay_comm", MPIre_input_path);
+    comm_fd = fopen(comm_file, "w");
+  #endif
 }
 
 int MPI_Init( int * argc, char *** argv ) {
-  #ifdef DEBUG
-    print_calling_function();
-  #endif
   int init;
   MPI_Initialized(&init);
   if(init) {
@@ -83,14 +88,14 @@ int MPI_Init( int * argc, char *** argv ) {
   }
   else {
     init_MPIre();
+    #ifdef DEBUG
+      print_calling_function();
+    #endif
     return PMPI_Init( argc, argv );
   }
 }
 
 void mpi_init_( int * ierror ) {
-  #ifdef DEBUG
-    print_calling_function();
-  #endif
   int init;
   MPI_Initialized(&init);
   if(init) {
@@ -99,6 +104,9 @@ void mpi_init_( int * ierror ) {
   }
   else {
     init_MPIre();
+    #ifdef DEBUG
+      print_calling_function();
+    #endif
     *ierror = PMPI_Init(0, NULL);
   }
 }
@@ -109,6 +117,7 @@ void mpi_init_( int * ierror ) {
 int MPI_Finalize( ) {
   #ifdef DEBUG
     print_calling_function();
+    fclose(comm_fd);
   #endif
   int ret = PMPI_Finalize();
   htable_clear(&requestHtab);
@@ -116,7 +125,12 @@ int MPI_Finalize( ) {
 }
 
 void mpi_finalize_( int * ierror ) {
-  *ierror = MPI_Finalize();
+  #ifdef DEBUG
+    print_calling_function();
+    fclose(comm_fd);
+  #endif
+  *ierror = PMPI_Finalize();
+  htable_clear(&requestHtab);
 }
 
 int MPI_Finalized( int * flag ) {*flag=1;return MPI_SUCCESS;}
@@ -275,10 +289,10 @@ void mpi_barrier_( MPI_Fint *comm, MPI_Fint *ierror ) {*ierror = MPI_SUCCESS;}
 //~ void mpi_ibarrier_( MPI_Comm comm, MPI_Request * request, int * ierror ) {*ierror = MPI_SUCCESS;}
 
 int MPI_Bcast(void * buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
-  #ifdef DEBUG
-    print_calling_function();
-  #endif
   if(MPIre_rank != root) {
+    #ifdef DEBUG
+      print_calling_function();
+    #endif
     read_in_file(buffer, count, datatype);
   }
   return MPI_SUCCESS;
@@ -337,9 +351,6 @@ void mpi_waitall_( MPI_Fint *count, MPI_Fint *array_of_requests, MPI_Fint *array
 }
 
 int MPI_Wait( MPI_Request * request, MPI_Status * status ) {
-  #ifdef DEBUG
-    print_calling_function();
-  #endif
   request_t * newHtab = NULL;
 
   //If newHtab == NULL it means that this request was for an isend and
@@ -347,6 +358,9 @@ int MPI_Wait( MPI_Request * request, MPI_Status * status ) {
   newHtab = get_request(request);
 
   if(newHtab != NULL) {
+    #ifdef DEBUG
+      print_calling_function();
+    #endif
     read_in_file(newHtab->buffer, newHtab->bufsize, newHtab->datatype);
     del_request(&requestHtab, hash_pointer(request, 0), newHtab);
   }
@@ -355,9 +369,6 @@ int MPI_Wait( MPI_Request * request, MPI_Status * status ) {
 }
 
 void mpi_wait_( MPI_Fint * request, MPI_Fint * status, int * ierror ) {
-  #ifdef DEBUG
-    print_calling_function();
-  #endif
   request_t * newHtab = NULL;
 
   //If newHtab == NULL it means that this request was for an isend and
@@ -365,6 +376,9 @@ void mpi_wait_( MPI_Fint * request, MPI_Fint * status, int * ierror ) {
   newHtab = get_request(request);
 
   if(newHtab != NULL) {
+    #ifdef DEBUG
+      print_calling_function();
+    #endif
     read_in_file(newHtab->buffer, newHtab->bufsize, newHtab->datatype);
     del_request(&requestHtab, hash_pointer(request, 0), newHtab);
   }
@@ -516,16 +530,10 @@ void mpi_comm_rank_( MPI_Comm comm, int * rank, int * ierror ) {*rank = MPIre_ra
 //~void mpi_comm_set_name_( MPI_Comm comm, const char * comm_name, int * ierror ) {*ierror = MPI_SUCCESS;}
 
 int MPI_Comm_size( MPI_Comm comm, int * size ) {
-  #ifdef DEBUG
-    print_calling_function();
-  #endif
   *size=MPIre_size;
   return MPI_SUCCESS;
 }
 void mpi_comm_size_( MPI_Comm comm, int * size, int * ierror ) {
-  #ifdef DEBUG
-    print_calling_function();
-  #endif
   *size=MPIre_size;
   *ierror = MPI_SUCCESS;
 }
